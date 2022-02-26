@@ -87,11 +87,23 @@ class Balance(BaseModel):
         )
 
     @classmethod
-    def create_void(
+    def create_real_void(
         cls, *, name: str, description: str = None, currency: Currency
     ) -> Balance:
         return cls.create(
             type="real",
+            name=name,
+            description=description,
+            currency=currency,
+            value=None,
+        )
+
+    @classmethod
+    def create_virtual_void(
+        cls, *, name: str, description: str = None, currency: Currency
+    ) -> Balance:
+        return cls.create(
+            type="virtual",
             name=name,
             description=description,
             currency=currency,
@@ -153,4 +165,71 @@ class Transaction(BaseModel):
             target_balance=target_balance,
             source_value=source_value,
             target_value=target_value,
+        )
+
+
+class AggregateTransaction(BaseModel):
+    _type: str = CharField(column_name="type")
+    real_transaction: Transaction = ForeignKeyField(
+        Transaction, backref="aggregation", unique=True
+    )
+    virtual_transaction: Transaction = ForeignKeyField(
+        Transaction, backref="aggregation", unique=True
+    )
+
+    @property
+    def type(self) -> str:
+        return self._type
+
+    @type.setter
+    def type(self, value: str):
+        if self._type and self._type != value:
+            raise ValueError("This attribute cannot be modified!")
+        elif value not in ["inbound", "outbound"]:
+            raise ValueError("Type can only be one of 'inbound' or 'outbound'!")
+        else:
+            self._type = value
+
+    @classmethod
+    def create_inbound(
+        cls, real_transaction: Transaction, virtual_transaction: Transaction
+    ) -> AggregateTransaction:
+        if real_transaction.type != "real":
+            raise ValueError("The real transaction isn't real!")
+        if virtual_transaction.type != "virtual":
+            raise ValueError("The virtual transaction isn't virtual!")
+        if real_transaction.source_balance.value is not None:
+            raise ValueError("The real transaction isn't from a void balance!")
+        if real_transaction.target_balance.value is None:
+            raise ValueError("The real transaction isn't to a non-void balance!")
+        if virtual_transaction.source_balance.value is not None:
+            raise ValueError("The virtual transaction isn't from a void balance!")
+        if virtual_transaction.target_balance.value is None:
+            raise ValueError("The virtual transaction isn't to a non-void balance!")
+        return cls.create(
+            type="inbound",
+            real_transaction=real_transaction,
+            virtual_transaction=virtual_transaction,
+        )
+
+    @classmethod
+    def create_outbound(
+        cls, real_transaction: Transaction, virtual_transaction: Transaction
+    ) -> AggregateTransaction:
+        if real_transaction.type != "real":
+            raise ValueError("The real transaction isn't real!")
+        if virtual_transaction.type != "virtual":
+            raise ValueError("The virtual transaction isn't virtual!")
+        if real_transaction.source_balance.value is None:
+            raise ValueError("The real transaction isn't from a non-void balance!")
+        if real_transaction.target_balance.value is not None:
+            raise ValueError("The real transaction isn't to a void balance!")
+        if virtual_transaction.source_balance.value is None:
+            raise ValueError("The virtual transaction isn't from a non-void balance!")
+        if virtual_transaction.target_balance.value is not None:
+            raise ValueError("The virtual transaction isn't to a void balance!")
+        return cls.create(
+            type="inbound",
+            real_transaction=real_transaction,
+            virtual_transaction=virtual_transaction,
         )

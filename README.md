@@ -32,11 +32,13 @@ All entities in a budget are represented by balances:
 
 * A **real balance** represents a *place* where money is (e.g., a bank
 account or a physical wallet).
-  * A real balance can optionally be a **void balance**, which
+  * A real balance can optionally be a **real void balance**, which
 represents an *external entity* that does not belong in the budget but
 interacts with it (like an employee or a store).
 * A **virtual balance** represents a *category* to which money is allocated
 (i.e., the actual budgeting: groceries, rent, emergency fund, etc.).
+  * A virtual balance can optionally be a **virtual void balance**, which
+represents a *dummy category* for managing income and expenses.
 
 #### Core attributes
 
@@ -54,7 +56,8 @@ single operations or part of a set.
 All transactions boil down to:
 
 * **Real transactions**, which move money from one real balance to another.
-* **Virtual transactions**, which move money from one virtual balance to another.
+* **Virtual transactions**, which move money from one virtual balance to
+another.
 
 #### Core attributes
 
@@ -70,10 +73,10 @@ All transactions boil down to:
 ### Aggregate transactions
 
 These contain one real transaction *and* one virtual transaction:
-* An **inbound transaction** moves money from a void balance to a real balance
-and maps it to a virtual balance.
-* An **outbound transaction** moves money from both a real balance and a
-virtual balance to a void balance.
+* An **inbound transaction** moves money from a real void balance to a real
+balance and maps it to a virtual balance.
+* An **outbound transaction** moves money from a real balance to a void balance
+and removes the value from a virtual balance.
 
 #### Core attributes
 
