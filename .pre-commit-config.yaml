@@ -22,3 +22,4 @@ repos:
     rev: 1.7.2
     hooks:
       - id: bandit
+        exclude: test

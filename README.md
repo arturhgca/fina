@@ -87,15 +87,16 @@ for the aggregate transactions.
 
 ## Data Store
 
-The core uses sqlite3 for storing all data. There are three tables:
+The core uses sqlite3 for storing all data. There are four tables:
 
+* Currencies
 * Balances
 * Core transactions
 * Aggregate transactions
 
 On top of the core attributes previously listed, all entities have:
 
-* Primary key (UUID)
+* Primary key (incremental)
 * Creation timestamp (Unix epoch time, seconds)
 * Last updated timestamp (Unix epoch time, seconds)
 
