@@ -4,8 +4,7 @@ Multicurrency envelope system implementation.
 ## The philosophy of fina
 
 This project aims to be a highly extensible financial life management platform.
-Therefore, it is to be modular, with the current code base serving as its
-foundation.
+With modularity in mind, the current code base will serve as its foundation.
 
 ### What fina-core is
 
@@ -31,7 +30,7 @@ manages the actual money, while the virtual manages budgeting.
 
 All entities in a budget are represented by balances:
 
-* A **real balance** represents a *place* where money is (e.g., a bank 
+* A **real balance** represents a *place* where money is (e.g., a bank
 account or a physical wallet).
   * A real balance can optionally be a **void balance**, which
 represents an *external entity* that does not belong in the budget but
