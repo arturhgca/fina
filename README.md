@@ -34,7 +34,7 @@ All entities in a budget are represented by balances:
 account or a physical wallet).
   * A real balance can optionally be a **real void balance**, which
 represents an *external entity* that does not belong in the budget but
-interacts with it (like an employee or a store).
+interacts with it (like an employer or a store).
 * A **virtual balance** represents a *category* to which money is allocated
 (i.e., the actual budgeting: groceries, rent, emergency fund, etc.).
   * A virtual balance can optionally be a **virtual void balance**, which
