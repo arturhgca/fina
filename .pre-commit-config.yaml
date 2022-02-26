@@ -5,6 +5,7 @@ repos:
     rev: v3.2.0
     hooks:
       - id: check-added-large-files
+      - id: check-toml
       - id: check-yaml
       - id: detect-private-key
       - id: end-of-file-fixer
