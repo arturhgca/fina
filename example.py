@@ -1,4 +1,4 @@
-import pendulum
+import datetime
 
 from core import Currency
 
@@ -21,18 +21,18 @@ employer.pay(
     # category can be empty, in which case money goes to the unallocated pool
     value=100000,
     to=checking_account,
-    when=pendulum.datetime(2022, 1, 31),
+    when=datetime.datetime(2022, 1, 31),
     description="Salary",
 )
 
 # allocate money from the unallocated pool
 rent = brl.categories.add(name="Rent").allocate(
     value=50000,
-    when=pendulum.datetime(2022, 2, 1),
+    when=datetime.datetime(2022, 2, 1),
 )
 fun_money = brl.categories.add(name="Fun Money").allocate(
     value=60000,
-    when=pendulum.datetime(2022, 2, 1),
+    when=datetime.datetime(2022, 2, 1),
 )
 # Category.deallocate should also exist!
 
@@ -41,14 +41,13 @@ figures = jpy.categories.add(name="Figures")
 checking_account.transfer(
     value=50000,
     to=wise_accounts["brl"],
-    when=pendulum.datetime(2022, 2, 1),
+    when=datetime.datetime(2022, 2, 1),
 )
 wise_accounts["brl"].convert(
-    # accepts (convert, into), (convert, rate), or (into, rate)
     convert=60000,
     into=13000,
     to=wise_accounts["jpy"],
-    when=pendulum.datetime(2022, 2, 1),
+    when=datetime.datetime(2022, 2, 1),
     deducing_from_category=fun_money,
     adding_to_category=figures,
 )
@@ -57,15 +56,15 @@ wise_accounts["brl"].convert(
 landlord = brl.sinks.add(name="Landlord")
 checking_account.pay(
     value=40000,
-    payee=landlord,
-    when=pendulum.datetime(2022, 2, 2),
+    to=landlord,
+    when=datetime.datetime(2022, 2, 2),
     category=rent,
 )
 
 amiami = jpy.sinks.add(name="AmiAmi")
 wise_accounts["jpy"].pay(
     value=13000,
-    payee=amiami,
-    when=pendulum.datetime(2022, 2, 2),
+    to=amiami,
+    when=datetime.datetime(2022, 2, 2),
     category=figures,
 )
