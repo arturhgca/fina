@@ -7,23 +7,9 @@ from peewee import CharField, IntegerField, ForeignKeyField, DateTimeField, Text
 from ._database import BaseModel
 
 
-class SmartList:
-    def __init__(self, wrapping, of_type, belonging_to):
-        self.original_list = wrapping
-        self.entity_type = of_type
-        self.parent = belonging_to
-
-    def add(self, **kwargs):
-        return self.entity_type.new(parent=self.parent, **kwargs)
-
-
 class Currency(BaseModel):
     code = CharField(unique=True, max_length=3)
     decimals = IntegerField()
-
-    @property
-    def budgets(self):
-        return SmartList(wrapping=self._budgets, of_type=Budget, belonging_to=self)
 
     @classmethod
     def new(cls, *, code: str, decimals: int) -> Currency:
@@ -32,32 +18,16 @@ class Currency(BaseModel):
 
 class Budget(BaseModel):
     name = CharField(unique=True)
-    currency = ForeignKeyField(Currency, backref="_budgets")
-
-    @property
-    def balances(self):
-        return SmartList(wrapping=self._balances, of_type=Balance, belonging_to=self)
-
-    @property
-    def sources(self):
-        return SmartList(wrapping=self._sources, of_type=Source, belonging_to=self)
-
-    @property
-    def sinks(self):
-        return SmartList(wrapping=self._sinks, of_type=Sink, belonging_to=self)
-
-    @property
-    def categories(self):
-        return SmartList(wrapping=self._categories, of_type=Category, belonging_to=self)
+    currency = ForeignKeyField(Currency, backref="budgets")
 
     @classmethod
-    def new(cls, *, parent: Currency, name: str) -> Budget:
-        return cls.create(currency=parent, name=name)
+    def new(cls, *, currency: Currency, name: str) -> Budget:
+        return cls.create(currency=currency, name=name)
 
 
 class Balance(BaseModel):
     name = CharField(unique=True)
-    budget = ForeignKeyField(Budget, backref="_balances")
+    budget = ForeignKeyField(Budget, backref="balances")
     starting_value = IntegerField()
 
     def transfer(
@@ -127,50 +97,14 @@ class Balance(BaseModel):
             )
         return self
 
-    @property
-    def incomes(self):
-        return SmartList(wrapping=self._incomes, of_type=Income, belonging_to=self)
-
-    @property
-    def outgoing_transactions(self):
-        return SmartList(
-            wrapping=self._outgoing_transactions, of_type=Transaction, belonging_to=self
-        )
-
-    @property
-    def incoming_transactions(self):
-        return SmartList(
-            wrapping=self._incoming_transactions, of_type=Transaction, belonging_to=self
-        )
-
-    @property
-    def outgoing_exchange_transactions(self):
-        return SmartList(
-            wrapping=self._outgoing_exchange_transactions,
-            of_type=ExchangeTransaction,
-            belonging_to=self,
-        )
-
-    @property
-    def incoming_exchange_transactions(self):
-        return SmartList(
-            wrapping=self._incoming_exchange_transactions,
-            of_type=ExchangeTransaction,
-            belonging_to=self,
-        )
-
-    @property
-    def expenses(self):
-        return SmartList(wrapping=self._expenses, of_type=Expense, belonging_to=self)
-
     @classmethod
-    def new(cls, *, parent: Budget, name: str, starting_value: int = 0) -> Balance:
-        return cls.create(budget=parent, name=name, starting_value=starting_value)
+    def new(cls, *, budget: Budget, name: str, starting_value: int = 0) -> Balance:
+        return cls.create(budget=budget, name=name, starting_value=starting_value)
 
 
 class Source(BaseModel):
     name = CharField(unique=True)
-    budget = ForeignKeyField(Budget, backref="_sources")
+    budget = ForeignKeyField(Budget, backref="sources")
 
     def pay(
         self,
@@ -196,33 +130,23 @@ class Source(BaseModel):
             )
         return self
 
-    @property
-    def transactions(self):
-        return SmartList(wrapping=self._transactions, of_type=Income, belonging_to=self)
-
     @classmethod
-    def new(cls, *, parent: Budget, name: str) -> Source:
-        return cls.create(budget=parent, name=name)
+    def new(cls, *, budget: Budget, name: str) -> Source:
+        return cls.create(budget=budget, name=name)
 
 
 class Sink(BaseModel):
     name = CharField(unique=True)
-    budget = ForeignKeyField(Budget, backref="_sinks")
-
-    @property
-    def transactions(self):
-        return SmartList(
-            wrapping=self._transactions, of_type=Expense, belonging_to=self
-        )
+    budget = ForeignKeyField(Budget, backref="sinks")
 
     @classmethod
-    def new(cls, *, parent: Budget, name: str) -> Sink:
-        return cls.create(budget=parent, name=name)
+    def new(cls, *, budget: Budget, name: str) -> Sink:
+        return cls.create(budget=budget, name=name)
 
 
 class Category(BaseModel):
     name = CharField(unique=True)
-    budget = ForeignKeyField(Budget, backref="_categories")
+    budget = ForeignKeyField(Budget, backref="categories")
     starting_value = IntegerField()
 
     def allocate(
@@ -245,29 +169,23 @@ class Category(BaseModel):
             description=description,
         )
 
-    @property
-    def allocations(self):
-        return SmartList(
-            wrapping=self._allocations, of_type=Allocation, belonging_to=self
-        )
-
     @classmethod
-    def new(cls, *, parent: Budget, name: str, starting_value: int = 0) -> Category:
-        return cls.create(budget=parent, name=name, starting_value=starting_value)
+    def new(cls, *, budget: Budget, name: str, starting_value: int = 0) -> Category:
+        return cls.create(budget=budget, name=name, starting_value=starting_value)
 
 
 class Income(BaseModel):
     value = IntegerField()
-    source = ForeignKeyField(Source, backref="_transactions")
-    destination = ForeignKeyField(Balance, backref="_incomes")
+    source = ForeignKeyField(Source, backref="transactions")
+    destination = ForeignKeyField(Balance, backref="incomes")
     when = DateTimeField()
     description = TextField(null=True)
 
 
 class Transaction(BaseModel):
     value = IntegerField()
-    source = ForeignKeyField(Balance, backref="_outgoing_transactions")
-    destination = ForeignKeyField(Balance, backref="_incoming_transactions")
+    source = ForeignKeyField(Balance, backref="outgoing_transactions")
+    destination = ForeignKeyField(Balance, backref="incoming_transactions")
     when = DateTimeField()
     description = TextField(null=True)
 
@@ -275,22 +193,22 @@ class Transaction(BaseModel):
 class ExchangeTransaction(BaseModel):
     source_value = IntegerField()
     destination_value = IntegerField()
-    source = ForeignKeyField(Balance, backref="_outgoing_exchange_transactions")
-    destination = ForeignKeyField(Balance, backref="_incoming_exchange_transactions")
+    source = ForeignKeyField(Balance, backref="outgoing_exchange_transactions")
+    destination = ForeignKeyField(Balance, backref="incoming_exchange_transactions")
     when = DateTimeField()
     description = TextField(null=True)
 
 
 class Expense(BaseModel):
     value = IntegerField()
-    source = ForeignKeyField(Balance, backref="_expenses")
-    destination = ForeignKeyField(Sink, backref="_transactions")
+    source = ForeignKeyField(Balance, backref="expenses")
+    destination = ForeignKeyField(Sink, backref="transactions")
     when = DateTimeField()
     description = TextField(null=True)
 
 
 class Allocation(BaseModel):
     value = IntegerField()
-    category = ForeignKeyField(Category, backref="_allocations")
+    category = ForeignKeyField(Category, backref="allocations")
     when = DateTimeField()
     description = TextField(null=True)
