@@ -20,9 +20,5 @@ class BaseModel(Model):
         self.is_deleted = False
         self.save()
 
-    @classmethod
-    def new(cls, **kwargs) -> BaseModel:
-        raise NotImplementedError
-
     class Meta:
         database = db
