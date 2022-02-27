@@ -1,107 +1,67 @@
-import datetime
+import pendulum
 
-from core import Currency, Balance, AggregateTransaction, Transaction
+# set environment up
+brl = Currency.new("BRL", decimals=2).budgets.add("Main BRL")
+jpy = Currency.new("JPY", decimals=0).budgets.add("Main JPY")
 
-currency_brl = Currency.create(code="BRL", decimals=2)
-employer = Balance.create_real_void(name="Employer", currency=currency_brl)
-checking_account = Balance.create_real(
-    name="Checking account", currency=currency_brl, value=0
-)
-# TODO:
-#  checking = 0
+# create accounts
+checking_account = brl.balances.add("Checking Account", starting_value=0)
+wise_accounts = {
+    "brl": brl.balances.add("Wise (BRL)", starting_value=10000),
+    "jpy": jpy.balances.add("Wise (JPY)"),
+}
 
-virtual_dummy = Balance.create_virtual_void(name="_dummy_brl", currency=currency_brl)
-to_budget = Balance.create_virtual(
-    name="To budget (BRL)", currency=currency_brl, value=0
+# add money from an external source
+employer = brl.sources.new("Employer")
+employer.pay(
+    # category can be empty, in which case money goes to the unallocated pool
+    value=100000,
+    to=checking_account,
+    when=pendulum.datetime(2022, 1, 31),
+    description="Salary",
 )
-AggregateTransaction.create_inbound(
-    real_transaction=Transaction.create_from_balances(
-        occurred=datetime.datetime.now(),
-        source_balance=employer,
-        target_balance=checking_account,
-        source_value=100000,
-    ),
-    virtual_transaction=Transaction.create_from_balances(
-        occurred=datetime.datetime.now(),
-        source_balance=virtual_dummy,
-        target_balance=to_budget,
-        source_value=100000,
-    ),
-)
-# TODO:
-#  checking = 1,000.00 BRL
-#  to budget = 1,000.00 BRL
 
-rent_budget = Balance.create_virtual(name="Rent", currency=currency_brl, value=0)
-Transaction.create_from_balances(
-    occurred=datetime.datetime.now(),
-    source_balance=to_budget,
-    target_balance=rent_budget,
-    source_value=50000,
+# allocate money from the unallocated pool
+rent = brl.categories.add("Rent").allocate(
+    value=50000,
+    when=pendulum.datetime(2022, 2, 1),
 )
-# TODO:
-#  checking = 1,000.00 BRL
-#  to budget = 500.00 BRL
-#  rent = 500.00 BRL
+fun_money = brl.categories.add("Fun Money").allocate(
+    value=60000,
+    when=pendulum.datetime(2022, 2, 1),
+)
+# Category.deallocate should also exist!
 
-currency_jpy = Currency.create(code="JPY", decimals=0)
-to_budget_jpy = Balance.create_virtual(
-    name="To budget (JPY)", currency=currency_jpy, value=0
+# convert money between currencies
+figures = jpy.categories.add("Figures")
+checking_account.transfer(
+    value=50000,
+    to=wise_accounts["brl"],
+    when=pendulum.datetime(2022, 2, 1),
 )
-figures_budget = Balance.create_virtual(
-    name="Anime figures", currency=currency_jpy, value=0
+wise_accounts["brl"].convert(
+    # accepts (convert, into), (convert, rate), or (into, rate)
+    convert=60000,
+    into=13000,
+    to=wise_accounts["jpy"],
+    when=pendulum.datetime(2022, 2, 1),
+    deducing_from_category=fun_money,
+    adding_to_category=figures,
 )
-jpy_wise_account = Balance.create_real(
-    name="Wise Borderless Account (JPY)", currency=currency_jpy, value=0
-)
-Transaction.create_from_balances(
-    occurred=datetime.datetime.now(),
-    source_balance=checking_account,
-    target_balance=jpy_wise_account,
-    source_value=50000,
-    target_value=10000,
-)
-Transaction.create_from_balances(
-    occurred=datetime.datetime.now(),
-    source_balance=to_budget,
-    target_balance=to_budget_jpy,
-    source_value=50000,
-    target_value=10000,
-)
-Transaction.create_from_balances(
-    occurred=datetime.datetime.now(),
-    source_balance=to_budget_jpy,
-    target_balance=figures_budget,
-    source_value=5000,
-)
-# TODO:
-#  checking = 500.00 BRL
-#  to budget = 0.00 BRL
-#  rent = 500.00 BRL
-#  to budget JPY = 5,000 JPY
-#  anime figures = 5,000 JPY
 
-amiami = Balance.create_real_void(name="AmiAmi", currency=currency_jpy)
-virtual_dummy_jpy = Balance.create_virtual_void(
-    name="_dummy_jpy", currency=currency_jpy
+# spend money
+landlord = brl.sinks.add("Landlord")
+checking_account.pay(
+    value=40000,
+    payee=landlord,
+    when=pendulum.datetime(2022, 2, 2),
+    category=rent,
 )
-AggregateTransaction.create_outbound(
-    real_transaction=Transaction.create_from_balances(
-        occurred=datetime.datetime.now(),
-        source_balance=jpy_wise_account,
-        target_balance=amiami,
-        source_value=5000,
-    ),
-    virtual_transaction=Transaction.create_from_balances(
-        occurred=datetime.datetime.now(),
-        source_balance=figures_budget,
-        target_balance=virtual_dummy_jpy,
-        source_value=5000,
-    ),
+
+amiami = jpy.sinks.new("AmiAmi")
+wise_accounts["jpy"].pay(
+    value=13000,
+    payee=amiami,
+    when=pendulum.datetime(2022, 2, 2),
+    category=figures,
 )
-# TODO:
-#  checking = 500.00 BRL
-#  to budget = 0.00 BRL
-#  rent = 500.00 BRL
-#  to budget JPY = 5,000 JPY
-#  anime figures = 0 JPY

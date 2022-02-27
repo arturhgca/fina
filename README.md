@@ -23,81 +23,60 @@ It is a Python API with a CLI application for testing.
 
 ## Data model
 
-fina-core operates on two levels: **real** and **virtual**. The real level
-manages the actual money, while the virtual manages budgeting.
+A **currency** is the top level entity of the platform. Within a currency,
+**budgets** can be created. A budget contains **balances** and **categories**,
+which are manipulated by **transactions**.
 
 ### Balances
 
-All entities in a budget are represented by balances:
+A balance represents a *place* where money is (e.g., a bank account or a
+physical wallet). It indicates how much money is available there.
 
-* A **real balance** represents a *place* where money is (e.g., a bank
-account or a physical wallet).
-  * A real balance can optionally be a **real void balance**, which
-represents an *external entity* that does not belong in the budget but
-interacts with it (like an employer or a store).
-* A **virtual balance** represents a *category* to which money is allocated
-(i.e., the actual budgeting: groceries, rent, emergency fund, etc.).
-  * A virtual balance can optionally be a **virtual void balance**, which
-represents a *dummy category* for managing income and expenses.
+There are special types of balances:
+* **Sources** are valueless balances from which money can only be taken.
+* **Sinks** are valueless balances to which money can only be added.
 
-#### Core attributes
+### Transactions
 
-* Type
-* Display name
-* Description (optional)
-* Currency
-* Value (null for void balances)
+Transactions represent any act of moving money from one balance to another.
+They usually aren't directly created - instead, balances expose the correct
+interfaces for moving money out of them.
 
-### Core transactions
+It is also possible to move money between budgets, even those of different
+currencies.
 
-Any time a balance is altered, that is done by a transaction. These can be
-single operations or part of a set.
+A few examples:
+* A source balance can **pay** values to a normal balance.
+* A balance can **transfer** values to another balance.
+* A balance can **convert** values to a balance of another currency.
+* A balance can **pay** values to a sink balance.
 
-All transactions boil down to:
+### Categories
 
-* **Real transactions**, which move money from one real balance to another.
-* **Virtual transactions**, which move money from one virtual balance to
-another.
+Categories are where the actual *budgeting* happens. They are essentially the
+envelopes of the eponymous system, where money is *allocated* for spending.
 
-#### Core attributes
-
-* Type (inferred from the source balance)
-* Description (optional)
-* Occurrence timestamp
-* Source balance
-* Target balance (must be of the same type as the source balance)
-* Source value
-* Target value (optional)
-* VET (calculated if both values are specified)
-
-### Aggregate transactions
-
-These contain one real transaction *and* one virtual transaction:
-* An **inbound transaction** moves money from a real void balance to a real
-balance and maps it to a virtual balance.
-* An **outbound transaction** moves money from a real balance to a void balance
-and removes the value from a virtual balance.
-
-#### Core attributes
-
-* Reference to real transaction
-* Reference to virtual transaction
-
-## API
-
-The API is a CRUD for the core entities. It also provides an abstracted CRUD
-for the aggregate transactions.
+Transactions usually *can* indicate a category, but each transaction type
+defines whether that's required.
 
 ## Data Store
 
-The core uses sqlite3 for storing all data. There are four tables:
+The core uses sqlite3 for storing all data. There are four _dimension_ tables:
 
 * Currencies
+* Budgets
 * Balances
-* Core transactions
-* Aggregate transactions
+* Categories
 
-On top of the core attributes previously listed, all entities have:
+And two _fact_ tables:
+
+* Allocations
+* Transactions
+
+Joining facts and dimensions allows for rewinding, snapshotting, flexible
+reporting, data revisions, and more.
+
+All entities have:
 
 * Primary key (incremental)
 * Creation timestamp (Unix epoch time, seconds)
