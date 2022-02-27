@@ -61,17 +61,22 @@ defines whether that's required.
 
 ## Data Store
 
-The core uses sqlite3 for storing all data. There are four _dimension_ tables:
+The core uses sqlite3 for storing all data. There are six _dimension_ tables:
 
 * Currencies
 * Budgets
+* Sources
 * Balances
+* Sinks
 * Categories
 
-And two _fact_ tables:
+And five _fact_ tables:
 
 * Allocations
+* Incomes
 * Transactions
+* Exchange Transactions
+* Expenses
 
 Joining facts and dimensions allows for rewinding, snapshotting, flexible
 reporting, data revisions, and more.
